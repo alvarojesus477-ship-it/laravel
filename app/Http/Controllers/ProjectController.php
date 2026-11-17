@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Models\User;
 
 class ProjectController extends Controller
 {
@@ -42,7 +43,19 @@ class ProjectController extends Controller
     {
         $project->load('owner', 'members');
 
-        return view('projects.show', compact('project'));
+
+        $availableUsers = collect();
+
+        if ($project->owner_id === auth()->id()) {
+            $availableUsers = User::whereNotIn(
+                    'id',
+                    $project->members->pluck('id')->push($project->owner_id)
+                )
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('projects.show', compact('project', 'availableUsers'));
     }
 
     public function edit(Project $project): View
